@@ -61,3 +61,29 @@ def test_mutate_returns_valid_strategy():
 def test_autoresearch_round_zero_is_baseline():
     result = run_autoresearch(EASY_PUZZLE, rounds=3, seed=42)
     assert result.rounds[0].round_num == 0
+
+
+# --- Ledger integration tests ---
+
+def test_autoresearch_has_ledger():
+    result = run_autoresearch(EASY_PUZZLE, rounds=5, seed=42)
+    assert result.ledger is not None
+    assert result.ledger.transaction_count == 5
+
+
+def test_autoresearch_ledger_contains_all_rounds():
+    result = run_autoresearch(EASY_PUZZLE, rounds=3, seed=42, ticket_id="sudoku_test")
+    output = result.ledger.to_ledger_string()
+    assert "sudoku_test" in output
+    assert "SCORE" in output
+    assert "STEPS" in output
+
+
+def test_autoresearch_ledger_save(tmp_path):
+    result = run_autoresearch(EASY_PUZZLE, rounds=3, seed=42)
+    path = str(tmp_path / "autoresearch.ledger")
+    result.ledger.save(path)
+    with open(path) as f:
+        content = f.read()
+    assert "Eval:" in content
+    assert "Budget:Score" in content
