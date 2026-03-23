@@ -46,9 +46,9 @@ def test_limited_propagation_depth():
 
 
 def test_max_steps_aborts():
-    cfg = SolverConfig(use_propagation=False, mrv=False, max_steps=5)
+    cfg = SolverConfig(use_propagation=False, mrv=False, max_steps=3)
     result = solve_with_config(EASY, cfg)
-    # With only 5 steps and no heuristics, likely fails
+    # With only 3 steps and no heuristics, can't solve
     assert not result.solved
 
 

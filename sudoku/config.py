@@ -35,7 +35,7 @@ class SolverConfig:
     propagation_depth: int = 0  # 0 = unlimited
     candidate_ordering: str = "ascending"  # ascending, descending, random, frequency
     mrv: bool = True
-    max_steps: int = 0  # 0 = no limit
+    max_steps: int = 50000  # safety limit to prevent hanging
 
     def describe(self) -> str:
         """One-line description for logging."""
@@ -47,8 +47,7 @@ class SolverConfig:
             parts.append("no-prop")
         parts.append(f"order={self.candidate_ordering}")
         parts.append(f"mrv={'on' if self.mrv else 'off'}")
-        if self.max_steps:
-            parts.append(f"max={self.max_steps}")
+        parts.append(f"max={self.max_steps}")
         return " | ".join(parts)
 
 
@@ -56,6 +55,7 @@ class SolverConfig:
 STRATEGIES = ["backtracking", "heuristic", "constraint"]
 ORDERINGS = ["ascending", "descending", "random", "frequency"]
 PROPAGATION_DEPTHS = [0, 1, 2, 3, 5]
+MAX_STEPS_OPTIONS = [10000, 50000, 100000]
 
 
 def mutate_config(config: SolverConfig, seed: Optional[int] = None) -> SolverConfig:
