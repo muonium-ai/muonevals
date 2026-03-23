@@ -1,6 +1,6 @@
 """Tests for the Sudoku solver."""
 
-from sudoku.solver import solve, solve_heuristic, is_valid
+from sudoku.solver import solve, solve_heuristic, solve_constraint, is_valid
 
 
 # A known easy puzzle
@@ -100,4 +100,31 @@ def test_heuristic_unsolvable():
     bad[0][0] = 5
     bad[0][1] = 5
     solution, _ = solve_heuristic(bad)
+    assert solution is None
+
+
+# --- Constraint propagation solver tests ---
+
+def test_constraint_solves_easy_puzzle():
+    solution, steps = solve_constraint(EASY_PUZZLE)
+    assert solution is not None
+    assert solution == EASY_SOLUTION
+
+
+def test_constraint_solution_is_valid():
+    solution, _ = solve_constraint(EASY_PUZZLE)
+    assert is_valid(solution)
+
+
+def test_constraint_fewer_steps_than_heuristic():
+    _, heuristic_steps = solve_heuristic(EASY_PUZZLE)
+    _, constraint_steps = solve_constraint(EASY_PUZZLE)
+    assert constraint_steps <= heuristic_steps
+
+
+def test_constraint_unsolvable():
+    bad = [row[:] for row in EASY_PUZZLE]
+    bad[0][0] = 5
+    bad[0][1] = 5
+    solution, _ = solve_constraint(bad)
     assert solution is None

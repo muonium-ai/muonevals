@@ -102,6 +102,130 @@ def solve_heuristic(grid: Grid) -> Tuple[Optional[Grid], int]:
     return None, steps[0]
 
 
+def _peers(row: int, col: int) -> List[Tuple[int, int]]:
+    """Return all peer cells (same row, col, or box) excluding (row, col)."""
+    peers = set()
+    for c in range(9):
+        if c != col:
+            peers.add((row, c))
+    for r in range(9):
+        if r != row:
+            peers.add((r, col))
+    br, bc = 3 * (row // 3), 3 * (col // 3)
+    for r in range(br, br + 3):
+        for c in range(bc, bc + 3):
+            if (r, c) != (row, col):
+                peers.add((r, c))
+    return list(peers)
+
+
+# Pre-compute peer lists
+_PEERS = [[_peers(r, c) for c in range(9)] for r in range(9)]
+
+
+def _init_possible(grid: Grid) -> Optional[List[List[set]]]:
+    """Initialize possible-value sets from a grid. Returns None if contradiction."""
+    possible = [[set(range(1, 10)) for _ in range(9)] for _ in range(9)]
+    for r in range(9):
+        for c in range(9):
+            if grid[r][c] != 0:
+                possible[r][c] = set()
+    # Eliminate based on given values
+    for r in range(9):
+        for c in range(9):
+            if grid[r][c] != 0:
+                val = grid[r][c]
+                for pr, pc in _PEERS[r][c]:
+                    possible[pr][pc].discard(val)
+    # Check for contradictions
+    for r in range(9):
+        for c in range(9):
+            if grid[r][c] == 0 and len(possible[r][c]) == 0:
+                return None
+    return possible
+
+
+def _propagate(grid: Grid, possible: List[List[set]], row: int, col: int, val: int) -> bool:
+    """Place val at (row, col) and propagate constraints. Returns False on contradiction."""
+    grid[row][col] = val
+    possible[row][col] = set()
+    for pr, pc in _PEERS[row][col]:
+        if val in possible[pr][pc]:
+            possible[pr][pc].discard(val)
+            if grid[pr][pc] == 0 and len(possible[pr][pc]) == 0:
+                return False
+            # Naked single: only one candidate left
+            if grid[pr][pc] == 0 and len(possible[pr][pc]) == 1:
+                single = next(iter(possible[pr][pc]))
+                if not _propagate(grid, possible, pr, pc, single):
+                    return False
+    return True
+
+
+def solve_constraint(grid: Grid) -> Tuple[Optional[Grid], int]:
+    """Solve using constraint propagation + backtracking.
+
+    Propagates naked singles on each placement, combined with MRV
+    cell selection. Faster than plain heuristic for most puzzles.
+
+    Args:
+        grid: 9x9 grid with 0 for empty cells.
+
+    Returns:
+        (solved_grid, steps) or (None, steps) if unsolvable.
+    """
+    grid = [row[:] for row in grid]
+    possible = _init_possible(grid)
+    if possible is None:
+        return None, 1
+    steps = [0]
+
+    # Propagate initial naked singles
+    changed = True
+    while changed:
+        changed = False
+        for r in range(9):
+            for c in range(9):
+                if grid[r][c] == 0 and len(possible[r][c]) == 1:
+                    val = next(iter(possible[r][c]))
+                    if not _propagate(grid, possible, r, c, val):
+                        return None, 1
+                    changed = True
+
+    def _backtrack(grid: Grid, possible: List[List[set]]) -> bool:
+        steps[0] += 1
+        # Find MRV cell
+        best_r, best_c, best_cands = -1, -1, None
+        for r in range(9):
+            for c in range(9):
+                if grid[r][c] == 0:
+                    cands = possible[r][c]
+                    if len(cands) == 0:
+                        return False
+                    if best_cands is None or len(cands) < len(best_cands):
+                        best_r, best_c, best_cands = r, c, cands
+        if best_cands is None:
+            return True  # solved
+
+        for val in list(best_cands):
+            # Snapshot state
+            grid_snap = [row[:] for row in grid]
+            poss_snap = [[cell.copy() for cell in row] for row in possible]
+            if _propagate(grid, possible, best_r, best_c, val):
+                if _backtrack(grid, possible):
+                    return True
+            # Restore state
+            for r in range(9):
+                for c in range(9):
+                    grid[r][c] = grid_snap[r][c]
+                    possible[r][c] = poss_snap[r][c]
+        return False
+
+    if _backtrack(grid, possible):
+        return grid, steps[0]
+    return None, steps[0]
+
+
 def solve(grid: Grid) -> Tuple[Optional[Grid], int]:
     """Solve a Sudoku puzzle using backtracking.
 
