@@ -24,6 +24,7 @@ from sudoku.dataset import get_dataset
 from sudoku.evaluate import score_result
 from sudoku.solver import is_valid
 from muonevals.ledger import EvalLedger
+from sudoku.best import load_best_score, check_and_commit
 
 
 @dataclass
@@ -118,6 +119,9 @@ def run_experiments(
     ledger = EvalLedger()
     run = AutoresearchRun(ledger=ledger)
 
+    # Load all-time best from best.tsv
+    all_time_best = load_best_score()
+
     # Experiment 0: baseline with default config
     baseline_config = SolverConfig()
     baseline = evaluate_config(baseline_config)
@@ -127,6 +131,10 @@ def run_experiments(
     run.best_config = baseline_config
     run.best_score = baseline.mean_score
     run.total_experiments = 1
+
+    # Check if baseline beats all-time best
+    if check_and_commit(baseline):
+        print(f"*** NEW ALL-TIME BEST: {baseline.mean_score:.4f} (committed to git) ***")
 
     # Log baseline to ledger
     ledger.log(
@@ -165,6 +173,10 @@ def run_experiments(
             run.best_score = exp.mean_score
             run.improvements += 1
             marker = ">>>"
+
+            # Commit to git if this beats the all-time best
+            if check_and_commit(exp):
+                marker = ">>> COMMITTED"
         else:
             exp.status = "regressed"
             marker = "   "
