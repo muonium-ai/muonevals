@@ -1,0 +1,2 @@
+timestamp	score	steps	time_ms	solved	config
+2026-03-23T18:20:16Z	0.7030	2166.5	283.35	6/6	constraint | prop=full | order=ascending | mrv=on | max=50000
