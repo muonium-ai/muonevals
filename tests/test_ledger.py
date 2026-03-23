@@ -59,8 +59,6 @@ def test_eval_ledger_save_default_path():
     assert path.endswith(".ledger")
     assert "ledgers" in path
     assert os.path.exists(path)
-    # Clean up
-    os.remove(path)
 
 
 def test_eval_ledger_without_strategy():
