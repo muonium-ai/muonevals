@@ -1,6 +1,6 @@
 """Tests for the Sudoku solver."""
 
-from sudoku.solver import solve, is_valid
+from sudoku.solver import solve, solve_heuristic, is_valid
 
 
 # A known easy puzzle
@@ -74,3 +74,30 @@ def test_is_valid_rejects_incomplete():
 def test_is_valid_rejects_wrong_size():
     assert not is_valid([[1, 2, 3]])
     assert not is_valid([])
+
+
+# --- Heuristic solver tests ---
+
+def test_heuristic_solves_easy_puzzle():
+    solution, steps = solve_heuristic(EASY_PUZZLE)
+    assert solution is not None
+    assert solution == EASY_SOLUTION
+
+
+def test_heuristic_solution_is_valid():
+    solution, _ = solve_heuristic(EASY_PUZZLE)
+    assert is_valid(solution)
+
+
+def test_heuristic_fewer_steps_than_baseline():
+    _, baseline_steps = solve(EASY_PUZZLE)
+    _, heuristic_steps = solve_heuristic(EASY_PUZZLE)
+    assert heuristic_steps < baseline_steps
+
+
+def test_heuristic_unsolvable():
+    bad = [row[:] for row in EASY_PUZZLE]
+    bad[0][0] = 5
+    bad[0][1] = 5
+    solution, _ = solve_heuristic(bad)
+    assert solution is None

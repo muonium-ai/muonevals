@@ -50,6 +50,58 @@ def _can_place(grid: Grid, row: int, col: int, num: int) -> bool:
     return True
 
 
+def _candidates(grid: Grid, row: int, col: int) -> List[int]:
+    """Return valid candidates for a cell."""
+    return [n for n in range(1, 10) if _can_place(grid, row, col, n)]
+
+
+def _find_least_candidates(grid: Grid) -> Optional[Tuple[int, int, List[int]]]:
+    """Find the empty cell with the fewest candidates (MRV heuristic)."""
+    best = None
+    for r in range(9):
+        for c in range(9):
+            if grid[r][c] == 0:
+                cands = _candidates(grid, r, c)
+                if best is None or len(cands) < len(best[2]):
+                    best = (r, c, cands)
+                    if len(cands) == 0:
+                        return best  # early exit, no candidates = dead end
+    return best
+
+
+def solve_heuristic(grid: Grid) -> Tuple[Optional[Grid], int]:
+    """Solve a Sudoku puzzle using backtracking with least-candidate heuristic.
+
+    Picks the empty cell with fewest candidates first (MRV), reducing
+    the search space compared to basic backtracking.
+
+    Args:
+        grid: 9x9 grid with 0 for empty cells.
+
+    Returns:
+        (solved_grid, steps) or (None, steps) if unsolvable.
+    """
+    grid = [row[:] for row in grid]
+    steps = [0]
+
+    def _backtrack() -> bool:
+        steps[0] += 1
+        result = _find_least_candidates(grid)
+        if result is None:
+            return True  # no empty cells
+        row, col, cands = result
+        for num in cands:
+            grid[row][col] = num
+            if _backtrack():
+                return True
+            grid[row][col] = 0
+        return False
+
+    if _backtrack():
+        return grid, steps[0]
+    return None, steps[0]
+
+
 def solve(grid: Grid) -> Tuple[Optional[Grid], int]:
     """Solve a Sudoku puzzle using backtracking.
 
