@@ -2,3 +2,4 @@ timestamp	score	steps	time_ms	solved	config
 2026-03-23T18:20:16Z	0.7030	2166.5	283.35	6/6	constraint | prop=full | order=ascending | mrv=on | max=50000
 2026-03-23T18:20:27Z	0.7058	2951.3	424.35	6/6	constraint | prop=full | order=random | mrv=on | max=50000
 2026-03-23T18:23:59Z	0.7166	3089.0	594.79	6/6	backtracking | prop=full | order=random | mrv=on | max=50000
+2026-03-23T18:26:18Z	0.7180	3089.0	576.65	6/6	backtracking | prop=full | order=random | mrv=on | max=50000
