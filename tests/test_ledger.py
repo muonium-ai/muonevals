@@ -44,11 +44,23 @@ def test_eval_ledger_save_to_file():
                run_date=date(2026, 3, 23))
     with tempfile.TemporaryDirectory() as tmpdir:
         path = os.path.join(tmpdir, "evals.ledger")
-        ledger.save(path)
+        returned_path = ledger.save(path)
+        assert returned_path == path
         with open(path) as f:
             content = f.read()
         assert "Evals:Score:backtracking" in content
         assert "Budget:Score" in content
+
+
+def test_eval_ledger_save_default_path():
+    ledger = EvalLedger()
+    ledger.log("s1", 1, 0.62, 500, 120.0, strategy="backtracking")
+    path = ledger.save()
+    assert path.endswith(".ledger")
+    assert "ledgers" in path
+    assert os.path.exists(path)
+    # Clean up
+    os.remove(path)
 
 
 def test_eval_ledger_without_strategy():

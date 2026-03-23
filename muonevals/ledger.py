@@ -81,11 +81,26 @@ class EvalLedger:
         """Serialize the journal to ledger-format text."""
         return print_command(self.journal)
 
-    def save(self, path: str) -> None:
-        """Write the journal to a .ledger file."""
+    def save(self, path: Optional[str] = None) -> str:
+        """Write the journal to a .ledger file.
+
+        Args:
+            path: File path. If None, saves to ledgers/<timestamp>.ledger
+                  relative to the project root.
+
+        Returns:
+            The path the file was written to.
+        """
+        if path is None:
+            ledgers_dir = os.path.join(
+                os.path.dirname(os.path.dirname(__file__)), "ledgers"
+            )
+            ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+            path = os.path.join(ledgers_dir, f"{ts}.ledger")
         os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
         with open(path, "w") as f:
             f.write(self.to_ledger_string())
+        return path
 
     @property
     def transaction_count(self) -> int:

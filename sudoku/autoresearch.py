@@ -115,4 +115,7 @@ def run_autoresearch(
             result.best_strategy = candidate.strategy
             result.best_score = candidate.score
 
+    # Auto-save ledger to ledgers/ with timestamp
+    ledger.save()
+
     return result

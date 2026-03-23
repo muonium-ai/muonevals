@@ -47,7 +47,7 @@ def export_eval_run(
             run_date=run_date,
         )
 
-    if output_path:
-        ledger.save(output_path)
+    # Auto-save: use explicit path if given, otherwise default timestamped path
+    ledger.save(output_path)
 
     return ledger
