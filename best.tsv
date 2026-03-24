@@ -2,3 +2,4 @@
 2026-03-24T13:09:37Z	0.7079	2166.5	181.94	6/6	heuristic | prop=full | order=ascending | mrv=on | max=50000
 2026-03-24T13:09:47Z	0.7103	314.0	19.97	6/6	backtracking | prop=3 | order=descending | mrv=off | max=50000
 2026-03-24T13:09:48Z	0.7166	1944.7	162.52	6/6	heuristic | prop=full | order=random | mrv=on | max=50000
+2026-03-24T13:09:58Z	0.7198	1187.8	114.17	6/6	heuristic | prop=full | order=descending | mrv=on | max=50000
