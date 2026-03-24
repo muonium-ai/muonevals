@@ -3,3 +3,4 @@
 2026-03-24T14:55:33Z	0.7134	2339.8	191.53	6/6	heuristic | prop=3 | order=random | mrv=on | max=50000
 2026-03-24T14:55:45Z	0.7164	1208.7	99.56	6/6	heuristic | prop=3 | order=descending | mrv=on | max=50000
 2026-03-24T14:55:57Z	0.7178	3145.0	285.37	6/6	constraint | prop=full | order=random | mrv=on | max=50000
+2026-03-24T14:56:04Z	0.7205	1187.8	110.94	6/6	heuristic | prop=full | order=descending | mrv=on | max=50000
