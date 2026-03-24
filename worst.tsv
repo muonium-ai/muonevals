@@ -1,9 +1,11 @@
-timestamp	score	steps	time_ms	solved	config
-2026-03-24T12:02:06Z	0.7015	2492.8	275.92	6/6	constraint | prop=5 | order=random | mrv=on | max=50000
-2026-03-24T12:02:11Z	0.6055	8476.2	562.44	5/6	backtracking | prop=5 | order=random | mrv=on | max=50000
-2026-03-24T12:02:12Z	0.4285	36428.3	237.49	4/6	backtracking | no-prop | order=frequency | mrv=off | max=100000
-2026-03-24T12:49:30Z	0.3462	5388.2	21.16	3/6	backtracking | no-prop | order=descending | mrv=on | max=10000
-2026-03-24T12:49:31Z	0.3318	6430.3	33.69	3/6	constraint | no-prop | order=frequency | mrv=off | max=10000
-2026-03-24T12:50:14Z	0.3314	6430.3	34.33	3/6	backtracking | no-prop | order=frequency | mrv=off | max=10000
-2026-03-24T12:51:03Z	0.3314	26625.0	120.75	3/6	backtracking | no-prop | order=random | mrv=on | max=50000
-2026-03-24T12:51:55Z	0.3308	6430.3	36.32	3/6	backtracking | no-prop | order=frequency | mrv=off | max=10000
+2026-03-24T13:09:24Z	0.7079	2166.5	168.57	6/6	constraint | prop=full | order=ascending | mrv=on | max=50000
+2026-03-24T13:09:26Z	0.6240	8618.3	446.26	5/6	backtracking | prop=full | order=ascending | mrv=on | max=50000
+2026-03-24T13:09:29Z	0.6185	8641.2	454.82	5/6	backtracking | prop=3 | order=ascending | mrv=off | max=50000
+2026-03-24T13:09:40Z	0.6109	8682.5	432.52	5/6	constraint | prop=2 | order=ascending | mrv=off | max=50000
+2026-03-24T13:09:40Z	0.4203	25785.2	108.52	3/6	backtracking | no-prop | order=random | mrv=on | max=50000
+2026-03-24T13:10:29Z	0.4167	5923.5	23.66	3/6	backtracking | no-prop | order=random | mrv=on | max=10000
+2026-03-24T13:11:14Z	0.4099	6430.3	33.26	3/6	backtracking | no-prop | order=frequency | mrv=off | max=10000
+2026-03-24T13:12:49Z	0.4099	26216.7	120.54	3/6	backtracking | no-prop | order=random | mrv=off | max=50000
+2026-03-24T13:13:14Z	0.4094	26004.5	129.17	3/6	constraint | no-prop | order=random | mrv=off | max=50000
+2026-03-24T13:23:13Z	0.4085	6430.3	36.74	3/6	backtracking | no-prop | order=frequency | mrv=off | max=10000
+2026-03-24T13:31:22Z	0.4081	6430.3	40.21	3/6	backtracking | no-prop | order=frequency | mrv=off | max=10000
