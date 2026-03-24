@@ -1,0 +1,23 @@
+[project]
+name = "muonevals"
+version = "0.1.0"
+description = "Evaluation framework for autoresearch experiments"
+requires-python = ">=3.11"
+dependencies = [
+    "muonledger",
+]
+
+[build-system]
+requires = ["hatchling>=1.24.0"]
+build-backend = "hatchling.build"
+
+[tool.uv.sources]
+muonledger = { path = "muonledger/port/python", editable = true }
+
+[dependency-groups]
+dev = [
+    "pytest",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

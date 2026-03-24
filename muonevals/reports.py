@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import muonevals._muonledger_path  # noqa: F401
-
 from typing import List, Optional
 
 from muonledger.commands.balance import balance_command

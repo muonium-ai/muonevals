@@ -6,8 +6,6 @@ as proper double-entry ledger transactions.
 
 from __future__ import annotations
 
-import muonevals._muonledger_path  # noqa: F401
-
 import json
 import os
 from datetime import date, datetime, timezone
