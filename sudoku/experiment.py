@@ -160,6 +160,7 @@ def run_experiments(
     exploit_pct: float = 0.6,
     explore_pct: float = 0.2,
     random_pct: float = 0.2,
+    workers: int = 1,
 ) -> AutoresearchRun:
     """Run the autoresearch experiment loop with three search strategies.
 
@@ -171,6 +172,7 @@ def run_experiments(
         exploit_pct: Fraction of experiments using exploit strategy (default 60%).
         explore_pct: Fraction using explore strategy (default 20%).
         random_pct: Fraction using random strategy (default 20%).
+        workers: Number of parallel workers for puzzle evaluation (default 1).
 
     Returns:
         AutoresearchRun with all experiments, best config, and ledger.
@@ -226,62 +228,119 @@ def run_experiments(
     )
 
     # Experiment loop: generate config per strategy → evaluate → keep/revert
+    # With workers > 1, batch independent experiments (explore/random) in parallel
     current_seed = seed
-    for i in range(1, num_experiments):
+    i = 1
+    while i < num_experiments:
         search_strat = schedule[i - 1] if i - 1 < len(schedule) else "exploit"
 
-        # Generate candidate config based on search strategy
-        if search_strat == "exploit":
-            candidate_config = mutate_config(run.best_config, seed=current_seed)
-        elif search_strat == "explore":
-            candidate_config = explore_config(run.best_config, seed=current_seed)
-        else:  # random
-            candidate_config = random_config(seed=current_seed)
+        if workers > 1 and search_strat in ("explore", "random"):
+            # Collect a batch of consecutive independent experiments
+            batch_configs = []
+            batch_strats = []
+            batch_ids = []
+            batch_seeds = []
+            while i < num_experiments:
+                s = schedule[i - 1] if i - 1 < len(schedule) else "exploit"
+                if s == "exploit":
+                    break  # exploit depends on best_config, can't batch
+                if s == "explore":
+                    cfg = explore_config(run.best_config, seed=current_seed)
+                else:
+                    cfg = random_config(seed=current_seed)
+                batch_configs.append(cfg)
+                batch_strats.append(s)
+                batch_ids.append(i)
+                batch_seeds.append(current_seed)
+                if current_seed is not None:
+                    current_seed += 1
+                i += 1
 
-        if current_seed is not None:
-            current_seed += 1
+            # Evaluate batch in parallel
+            from concurrent.futures import ProcessPoolExecutor
+            with ProcessPoolExecutor(max_workers=workers) as pool:
+                batch_results = list(pool.map(evaluate_config, batch_configs))
 
-        # Evaluate (experiment)
-        exp = evaluate_config(candidate_config)
-        exp.experiment_id = i
-        exp.search_strategy = search_strat
-        run.total_experiments += 1
+            # Process results sequentially (accept/reject, logging)
+            for j, exp in enumerate(batch_results):
+                exp.experiment_id = batch_ids[j]
+                exp.search_strategy = batch_strats[j]
+                run.total_experiments += 1
 
-        # Compare (accept/reject)
-        if exp.mean_score > run.best_score:
-            exp.status = "improved"
-            run.best_config = candidate_config
-            run.best_score = exp.mean_score
-            run.improvements += 1
-            marker = ">>>"
+                if exp.mean_score > run.best_score:
+                    exp.status = "improved"
+                    run.best_config = batch_configs[j]
+                    run.best_score = exp.mean_score
+                    run.improvements += 1
+                    marker = ">>>"
+                    if check_and_commit(exp):
+                        marker = ">>> COMMITTED"
+                else:
+                    exp.status = "regressed"
+                    marker = "   "
 
-            # Commit to git if this beats the all-time best
-            if check_and_commit(exp):
-                marker = ">>> COMMITTED"
+                if check_and_record_worst(exp):
+                    marker += " (new worst)"
+
+                run.experiments.append(exp)
+                ledger.log(
+                    ticket_id=ticket_id,
+                    attempt_id=batch_ids[j],
+                    score=exp.mean_score,
+                    steps=int(exp.mean_steps),
+                    time_ms=exp.mean_time_ms,
+                    strategy=f"[{batch_strats[j]}] {exp.description}",
+                    run_date=run_date,
+                )
+                print(f"{batch_ids[j]:>3}  {batch_strats[j]:>8}  {exp.status:>10}  {exp.mean_score:>7.4f}  {exp.mean_steps:>7.1f}  "
+                      f"{exp.mean_time_ms:>7.2f}ms  {exp.solved_count:>2}/{exp.total_count:<2}  "
+                      f"{exp.description}  {marker}")
         else:
-            exp.status = "regressed"
-            marker = "   "
+            # Sequential: exploit or single-worker mode
+            if search_strat == "exploit":
+                candidate_config = mutate_config(run.best_config, seed=current_seed)
+            elif search_strat == "explore":
+                candidate_config = explore_config(run.best_config, seed=current_seed)
+            else:
+                candidate_config = random_config(seed=current_seed)
 
-        # Track worst-performing configs
-        if check_and_record_worst(exp):
-            marker += " (new worst)"
+            if current_seed is not None:
+                current_seed += 1
 
-        run.experiments.append(exp)
+            exp = evaluate_config(candidate_config)
+            exp.experiment_id = i
+            exp.search_strategy = search_strat
+            run.total_experiments += 1
 
-        # Log to ledger
-        ledger.log(
-            ticket_id=ticket_id,
-            attempt_id=i,
-            score=exp.mean_score,
-            steps=int(exp.mean_steps),
-            time_ms=exp.mean_time_ms,
-            strategy=f"[{search_strat}] {exp.description}",
-            run_date=run_date,
-        )
+            if exp.mean_score > run.best_score:
+                exp.status = "improved"
+                run.best_config = candidate_config
+                run.best_score = exp.mean_score
+                run.improvements += 1
+                marker = ">>>"
+                if check_and_commit(exp):
+                    marker = ">>> COMMITTED"
+            else:
+                exp.status = "regressed"
+                marker = "   "
 
-        print(f"{i:>3}  {search_strat:>8}  {exp.status:>10}  {exp.mean_score:>7.4f}  {exp.mean_steps:>7.1f}  "
-              f"{exp.mean_time_ms:>7.2f}ms  {exp.solved_count:>2}/{exp.total_count:<2}  "
-              f"{exp.description}  {marker}")
+            if check_and_record_worst(exp):
+                marker += " (new worst)"
+
+            run.experiments.append(exp)
+            ledger.log(
+                ticket_id=ticket_id,
+                attempt_id=i,
+                score=exp.mean_score,
+                steps=int(exp.mean_steps),
+                time_ms=exp.mean_time_ms,
+                strategy=f"[{search_strat}] {exp.description}",
+                run_date=run_date,
+            )
+            print(f"{i:>3}  {search_strat:>8}  {exp.status:>10}  {exp.mean_score:>7.4f}  {exp.mean_steps:>7.1f}  "
+                  f"{exp.mean_time_ms:>7.2f}ms  {exp.solved_count:>2}/{exp.total_count:<2}  "
+                  f"{exp.description}  {marker}")
+            i += 1
 
     # Auto-save ledger and results TSV with matching timestamps
     from sudoku.results import save_results_tsv

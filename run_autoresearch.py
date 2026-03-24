@@ -42,10 +42,16 @@ def main():
         "--random", type=float, default=0.2,
         help="Fraction of random experiments (default: 0.2)"
     )
+    parser.add_argument(
+        "--workers", "-w", type=int, default=1,
+        help="Parallel workers for experiment evaluation (default: 1, try 4-8 for speedup)"
+    )
     args = parser.parse_args()
 
     print(f"Running {args.experiments} experiments...")
     print(f"Strategy mix: {args.exploit:.0%} exploit, {args.explore:.0%} explore, {args.random:.0%} random")
+    if args.workers > 1:
+        print(f"Workers: {args.workers}")
     if args.seed is not None:
         print(f"Seed: {args.seed}")
     print()
@@ -57,6 +63,7 @@ def main():
         exploit_pct=args.exploit,
         explore_pct=args.explore,
         random_pct=args.random,
+        workers=args.workers,
     )
 
     # Print summary
