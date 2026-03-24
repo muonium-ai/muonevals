@@ -24,7 +24,7 @@ from sudoku.dataset import get_dataset
 from sudoku.evaluate import score_result
 from sudoku.solver import is_valid
 from muonevals.ledger import EvalLedger
-from sudoku.best import load_best_score, check_and_commit
+from sudoku.best import load_best, check_and_commit
 
 
 @dataclass
@@ -119,11 +119,13 @@ def run_experiments(
     ledger = EvalLedger()
     run = AutoresearchRun(ledger=ledger)
 
-    # Load all-time best from best.tsv
-    all_time_best = load_best_score()
+    # Load all-time best score and config from best.tsv
+    all_time_best, best_config = load_best()
 
-    # Experiment 0: baseline with default config
-    baseline_config = SolverConfig()
+    # Experiment 0: start from best known config (or default if first run)
+    baseline_config = best_config if best_config is not None else SolverConfig()
+    if best_config is not None:
+        print(f"Resuming from best config: {baseline_config.describe()} (score: {all_time_best:.4f})")
     baseline = evaluate_config(baseline_config)
     baseline.experiment_id = 0
     baseline.status = "baseline"
