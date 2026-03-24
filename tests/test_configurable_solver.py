@@ -97,16 +97,21 @@ def test_config_describe():
 
 
 def test_strategy_changes_behavior():
-    """Different strategies should produce different step counts."""
+    """Different strategies should produce different step counts.
+
+    Disable propagation so the MRV difference between strategies is visible
+    (with propagation, easy puzzles solve in 1 step for all strategies).
+    """
     configs = {
-        "backtracking": SolverConfig(strategy="backtracking"),
-        "heuristic": SolverConfig(strategy="heuristic"),
-        "constraint": SolverConfig(strategy="constraint"),
+        "backtracking": SolverConfig(strategy="backtracking", use_propagation=False),
+        "heuristic": SolverConfig(strategy="heuristic", use_propagation=False),
+        "constraint": SolverConfig(strategy="constraint", use_propagation=False),
     }
     results = {name: solve_with_config(EASY, cfg) for name, cfg in configs.items()}
     steps = {name: r.steps for name, r in results.items()}
-    # At least two strategies should have different step counts
-    assert len(set(steps.values())) >= 2, f"All strategies produced same steps: {steps}"
+    # backtracking (no MRV) should take more steps than heuristic/constraint (MRV)
+    assert steps["backtracking"] > steps["heuristic"], (
+        f"backtracking ({steps['backtracking']}) should take more steps than heuristic ({steps['heuristic']})")
     # All should still solve
     for name, r in results.items():
         assert r.solved, f"{name} failed to solve"

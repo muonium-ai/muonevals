@@ -121,28 +121,30 @@ def solve_with_config(grid: Grid, config: SolverConfig) -> SolveResult:
     steps = [0]
     start = time.perf_counter()
 
-    # Strategy determines the solving approach by overriding certain knobs
+    # Strategy determines MRV behavior; propagation knobs are orthogonal
     effective_config = config
     if config.strategy == "backtracking":
-        # Pure backtracking: no propagation, no MRV
-        effective_config = SolverConfig(
-            strategy=config.strategy,
-            use_propagation=False,
-            propagation_depth=0,
-            candidate_ordering=config.candidate_ordering,
-            mrv=False,
-            max_steps=config.max_steps,
-        )
+        # Pure backtracking: no MRV (scan cells top-left to bottom-right)
+        if config.mrv:
+            effective_config = SolverConfig(
+                strategy=config.strategy,
+                use_propagation=config.use_propagation,
+                propagation_depth=config.propagation_depth,
+                candidate_ordering=config.candidate_ordering,
+                mrv=False,
+                max_steps=config.max_steps,
+            )
     elif config.strategy == "heuristic":
-        # Heuristic: MRV cell selection but no propagation
-        effective_config = SolverConfig(
-            strategy=config.strategy,
-            use_propagation=False,
-            propagation_depth=0,
-            candidate_ordering=config.candidate_ordering,
-            mrv=True,
-            max_steps=config.max_steps,
-        )
+        # Heuristic: always use MRV (pick cell with fewest candidates)
+        if not config.mrv:
+            effective_config = SolverConfig(
+                strategy=config.strategy,
+                use_propagation=config.use_propagation,
+                propagation_depth=config.propagation_depth,
+                candidate_ordering=config.candidate_ordering,
+                mrv=True,
+                max_steps=config.max_steps,
+            )
     # "constraint" uses all config knobs as-is
 
     def _backtrack() -> bool:
