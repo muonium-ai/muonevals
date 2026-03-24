@@ -44,6 +44,24 @@ def test_met_target():
     assert t.met_target
 
 
+def test_attempt_passed_uses_target():
+    t = EvalTicket(id="s1", title="test", target_score=0.9)
+    a = t.add_attempt(score=0.95, steps=50, time_ms=20)
+    assert t.attempt_passed(a)
+
+
+def test_attempt_not_passed_below_target():
+    t = EvalTicket(id="s1", title="test", target_score=0.9)
+    a = t.add_attempt(score=0.85, steps=50, time_ms=20)
+    assert not t.attempt_passed(a)
+
+
+def test_attempt_passed_exact_target():
+    t = EvalTicket(id="s1", title="test", target_score=0.9)
+    a = t.add_attempt(score=0.9, steps=50, time_ms=20)
+    assert t.attempt_passed(a)
+
+
 def test_to_dict():
     t = EvalTicket(id="s1", title="test", target_score=0.9)
     t.add_attempt(score=0.8, steps=100, time_ms=50, strategy="basic")

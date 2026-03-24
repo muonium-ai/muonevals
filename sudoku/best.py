@@ -126,9 +126,9 @@ def commit_best(exp: Experiment) -> Optional[str]:
 
 
 def check_and_commit(exp: Experiment) -> bool:
-    """If exp beats the current best, save and commit. Returns True if committed."""
+    """If exp beats the current best, save and commit. Returns True only if committed."""
     current_best = load_best_score()
     if exp.mean_score > current_best:
-        commit_best(exp)
-        return True
+        result = commit_best(exp)
+        return result is not None
     return False

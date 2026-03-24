@@ -16,10 +16,6 @@ class Attempt:
     time_ms: float
     strategy: Optional[str] = None
 
-    @property
-    def passed(self) -> bool:
-        return self.score >= 1.0  # caller checks against target
-
 
 @dataclass
 class EvalTicket:
@@ -63,6 +59,10 @@ class EvalTicket:
     def met_target(self) -> bool:
         best = self.best_attempt
         return best is not None and best.score >= self.target_score
+
+    def attempt_passed(self, attempt: Attempt) -> bool:
+        """Check if a specific attempt meets the target score."""
+        return attempt.score >= self.target_score
 
     def to_dict(self) -> dict:
         return {

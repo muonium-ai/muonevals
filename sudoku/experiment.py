@@ -114,13 +114,30 @@ def _build_strategy_schedule(
     Returns a list of strategy names (exploit/explore/random) for
     experiments 1..num_experiments-1 (experiment 0 is always baseline).
     """
+    # Validate percentage inputs
+    for name, pct in [("exploit_pct", exploit_pct), ("explore_pct", explore_pct), ("random_pct", random_pct)]:
+        if not (0.0 <= pct <= 1.0):
+            raise ValueError(f"{name} must be in [0.0, 1.0], got {pct}")
+    total = exploit_pct + explore_pct + random_pct
+    if abs(total - 1.0) > 0.01:
+        raise ValueError(f"Percentages must sum to 1.0 (got {total})")
+
     n = num_experiments - 1  # exclude baseline
     if n <= 0:
         return []
 
-    n_explore = max(1, round(n * explore_pct)) if n >= 3 else 0
-    n_random = max(1, round(n * random_pct)) if n >= 3 else 0
+    n_explore = round(n * explore_pct)
+    n_random = round(n * random_pct)
     n_exploit = n - n_explore - n_random
+
+    # Guard against rounding overshoot making n_exploit negative
+    if n_exploit < 0:
+        overshoot = -n_exploit
+        if n_explore >= n_random:
+            n_explore -= overshoot
+        else:
+            n_random -= overshoot
+        n_exploit = 0
 
     schedule = (
         ["exploit"] * n_exploit

@@ -121,34 +121,58 @@ def solve_with_config(grid: Grid, config: SolverConfig) -> SolveResult:
     steps = [0]
     start = time.perf_counter()
 
+    # Strategy determines the solving approach by overriding certain knobs
+    effective_config = config
+    if config.strategy == "backtracking":
+        # Pure backtracking: no propagation, no MRV
+        effective_config = SolverConfig(
+            strategy=config.strategy,
+            use_propagation=False,
+            propagation_depth=0,
+            candidate_ordering=config.candidate_ordering,
+            mrv=False,
+            max_steps=config.max_steps,
+        )
+    elif config.strategy == "heuristic":
+        # Heuristic: MRV cell selection but no propagation
+        effective_config = SolverConfig(
+            strategy=config.strategy,
+            use_propagation=False,
+            propagation_depth=0,
+            candidate_ordering=config.candidate_ordering,
+            mrv=True,
+            max_steps=config.max_steps,
+        )
+    # "constraint" uses all config knobs as-is
+
     def _backtrack() -> bool:
         steps[0] += 1
-        if config.max_steps and steps[0] > config.max_steps:
+        if effective_config.max_steps and steps[0] > effective_config.max_steps:
             return False
 
         # Propagate naked singles if enabled
-        if config.use_propagation:
+        if effective_config.use_propagation:
             snap = [r[:] for r in grid]
-            if not _propagate_naked_singles(grid, config.propagation_depth):
+            if not _propagate_naked_singles(grid, effective_config.propagation_depth):
                 # Contradiction — restore and return False
                 for r in range(9):
                     for c in range(9):
                         grid[r][c] = snap[r][c]
                 return False
 
-        result = _find_cell(grid, config.mrv)
+        result = _find_cell(grid, effective_config.mrv)
         if result is None:
             return True  # solved
         row, col, cands = result
         if len(cands) == 0:
-            if config.use_propagation:
+            if effective_config.use_propagation:
                 # Restore from before propagation
                 for r in range(9):
                     for c in range(9):
                         grid[r][c] = snap[r][c]
             return False
 
-        ordered = _order_candidates(cands, grid, row, col, config.candidate_ordering)
+        ordered = _order_candidates(cands, grid, row, col, effective_config.candidate_ordering)
 
         for val in ordered:
             # Save state before this guess
@@ -161,7 +185,7 @@ def solve_with_config(grid: Grid, config: SolverConfig) -> SolveResult:
                 for c in range(9):
                     grid[r][c] = guess_snap[r][c]
 
-        if config.use_propagation:
+        if effective_config.use_propagation:
             # Restore from before propagation
             for r in range(9):
                 for c in range(9):

@@ -94,3 +94,19 @@ def test_config_describe():
     desc = cfg.describe()
     assert "constraint" in desc
     assert "prop=" in desc
+
+
+def test_strategy_changes_behavior():
+    """Different strategies should produce different step counts."""
+    configs = {
+        "backtracking": SolverConfig(strategy="backtracking"),
+        "heuristic": SolverConfig(strategy="heuristic"),
+        "constraint": SolverConfig(strategy="constraint"),
+    }
+    results = {name: solve_with_config(EASY, cfg) for name, cfg in configs.items()}
+    steps = {name: r.steps for name, r in results.items()}
+    # At least two strategies should have different step counts
+    assert len(set(steps.values())) >= 2, f"All strategies produced same steps: {steps}"
+    # All should still solve
+    for name, r in results.items():
+        assert r.solved, f"{name} failed to solve"
