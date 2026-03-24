@@ -13,9 +13,10 @@ This mirrors autoresearch's: modify train.py → run → compare val_bpb → kee
 
 from __future__ import annotations
 
+import os
 import time
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, datetime, timezone
 from typing import List, Optional
 
 from sudoku.config import SolverConfig, mutate_config, random_config, explore_config
@@ -24,7 +25,7 @@ from sudoku.dataset import get_dataset
 from sudoku.evaluate import score_result
 from sudoku.solver import is_valid
 from muonevals.ledger import EvalLedger
-from sudoku.best import load_best, check_and_commit
+from sudoku.best import load_best, check_and_commit, check_and_record_worst
 
 
 SEARCH_STRATEGIES = ("exploit", "explore", "random")
@@ -197,9 +198,10 @@ def run_experiments(
     run.best_score = baseline.mean_score
     run.total_experiments = 1
 
-    # Check if baseline beats all-time best
+    # Check if baseline beats all-time best or worst
     if check_and_commit(baseline):
         print(f"*** NEW ALL-TIME BEST: {baseline.mean_score:.4f} (committed to git) ***")
+    check_and_record_worst(baseline)
 
     # Log baseline to ledger
     ledger.log(
@@ -260,6 +262,10 @@ def run_experiments(
             exp.status = "regressed"
             marker = "   "
 
+        # Track worst-performing configs
+        if check_and_record_worst(exp):
+            marker += " (new worst)"
+
         run.experiments.append(exp)
 
         # Log to ledger
@@ -277,8 +283,15 @@ def run_experiments(
               f"{exp.mean_time_ms:>7.2f}ms  {exp.solved_count:>2}/{exp.total_count:<2}  "
               f"{exp.description}  {marker}")
 
-    # Auto-save ledger
-    saved_path = ledger.save()
+    # Auto-save ledger and results TSV with matching timestamps
+    from sudoku.results import save_results_tsv
+    ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    ledgers_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "ledgers")
+    ledger_path = os.path.join(ledgers_dir, f"{ts}.ledger")
+    tsv_path = os.path.join(ledgers_dir, f"{ts}_results.tsv")
+    ledger.save(path=ledger_path)
+    save_results_tsv(run, path=tsv_path)
+
     print(f"\n{'='*105}")
     print(f"Best score: {run.best_score:.4f} ({run.improvements} improvements in "
           f"{run.total_experiments} experiments)")
@@ -300,6 +313,7 @@ def run_experiments(
             if count > 0:
                 print(f"  {s:>8}: {count} experiments, {improved} improvements")
 
-    print(f"Ledger saved: {saved_path}")
+    print(f"Ledger saved: {ledger_path}")
+    print(f"Results saved: {tsv_path}")
 
     return run

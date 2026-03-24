@@ -11,7 +11,7 @@ import argparse
 import sys
 
 from sudoku.experiment import run_experiments
-from sudoku.results import results_to_tsv, save_results_tsv, summary_table
+from sudoku.results import summary_table
 
 
 def main():
@@ -59,13 +59,9 @@ def main():
         random_pct=args.random,
     )
 
-    # Save results
-    tsv_path = save_results_tsv(run)
-
     # Print summary
     print()
     print(summary_table(run))
-    print(f"\nResults saved: {tsv_path}")
 
 
 if __name__ == "__main__":

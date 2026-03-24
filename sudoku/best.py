@@ -1,7 +1,8 @@
-"""Track the all-time best experiment result.
+"""Track the all-time best and worst experiment results.
 
-best.tsv in the project root is version-controlled. When an experiment
-beats the current best, this module updates the file and commits it.
+best.tsv and worst.tsv in the project root are version-controlled.
+When an experiment beats the current best (or worst), these modules
+update the files and commit them.
 """
 
 from __future__ import annotations
@@ -15,7 +16,9 @@ if TYPE_CHECKING:
     from sudoku.experiment import Experiment
     from sudoku.config import SolverConfig
 
-BEST_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "best.tsv")
+_ROOT = os.path.dirname(os.path.dirname(__file__))
+BEST_FILE = os.path.join(_ROOT, "best.tsv")
+WORST_FILE = os.path.join(_ROOT, "worst.tsv")
 
 HEADER = "timestamp\tscore\tsteps\ttime_ms\tsolved\tconfig"
 
@@ -131,4 +134,55 @@ def check_and_commit(exp: Experiment) -> bool:
     if exp.mean_score > current_best:
         result = commit_best(exp)
         return result is not None
+    return False
+
+
+# --- Worst tracking ---
+
+def load_worst() -> Tuple[float, Optional["SolverConfig"]]:
+    """Load the worst score and config from worst.tsv. Returns (inf, None) if no file."""
+    if not os.path.exists(WORST_FILE):
+        return float("inf"), None
+    with open(WORST_FILE) as f:
+        lines = f.readlines()
+    if len(lines) < 2:
+        return float("inf"), None
+    last = lines[-1].strip()
+    if not last:
+        return float("inf"), None
+    parts = last.split("\t")
+    score = float(parts[1])
+    config = _parse_config_string(parts[5]) if len(parts) >= 6 else None
+    return score, config
+
+
+def load_worst_score() -> float:
+    """Load the current worst score from worst.tsv. Returns inf if no file."""
+    score, _ = load_worst()
+    return score
+
+
+def save_worst(exp: "Experiment") -> str:
+    """Append a new worst result to worst.tsv."""
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    line = (f"{ts}\t{exp.mean_score:.4f}\t{exp.mean_steps:.1f}\t"
+            f"{exp.mean_time_ms:.2f}\t{exp.solved_count}/{exp.total_count}\t"
+            f"{exp.description}")
+
+    if not os.path.exists(WORST_FILE):
+        with open(WORST_FILE, "w") as f:
+            f.write(HEADER + "\n")
+
+    with open(WORST_FILE, "a") as f:
+        f.write(line + "\n")
+
+    return WORST_FILE
+
+
+def check_and_record_worst(exp: "Experiment") -> bool:
+    """If exp is worse than the current worst, save it. Returns True if recorded."""
+    current_worst = load_worst_score()
+    if exp.mean_score < current_worst:
+        save_worst(exp)
+        return True
     return False
