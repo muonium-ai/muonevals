@@ -22,8 +22,13 @@ class StrategyResult:
 
 
 def score_result(solution: Optional[Grid], steps: int, time_ms: float) -> float:
-    """Compute a combined score from correctness, efficiency, and speed."""
-    correct = 1.0 if solution is not None and is_valid(solution) else 0.0
+    """Compute a combined score from correctness, efficiency, and speed.
+
+    Correctness uses partial credit — a grid with 70/81 conflict-free cells
+    scores ~0.86 instead of 0.0, creating a smooth gradient for the search.
+    """
+    from muonevals.scorers import correctness
+    correct = correctness(solution)
     eff = 1.0 / (1.0 + steps)
     spd = 1.0 / (1.0 + time_ms)
     # Correctness dominates: 60% correctness, 20% efficiency, 20% speed

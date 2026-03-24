@@ -2,10 +2,17 @@
 
 
 def correctness(solution) -> float:
-    """Return 1 if solution is a valid 9x9 Sudoku grid, 0 otherwise."""
+    """Score a Sudoku grid with partial credit for incomplete solutions.
+
+    Returns:
+        1.0 for a fully valid solved grid.
+        For partial/invalid grids: fraction of filled cells that have no
+        constraint violations (no duplicate in their row, column, or box).
+        0.0 for None, empty, or structurally invalid input.
+    """
     if not solution:
         return 0.0
-    # Validate structure: must be a 9x9 grid of ints 1-9
+    # Validate structure: must be a 9x9 grid of ints
     try:
         if len(solution) != 9:
             return 0.0
@@ -13,22 +20,49 @@ def correctness(solution) -> float:
             if len(row) != 9:
                 return 0.0
             for val in row:
-                if not isinstance(val, int) or val < 1 or val > 9:
+                if not isinstance(val, int):
                     return 0.0
     except TypeError:
         return 0.0
-    # Check Sudoku validity (rows, cols, boxes)
-    for i in range(9):
-        row = [solution[i][j] for j in range(9)]
-        col = [solution[j][i] for j in range(9)]
-        if sorted(row) != list(range(1, 10)) or sorted(col) != list(range(1, 10)):
-            return 0.0
-    for br in range(3):
-        for bc in range(3):
-            box = [solution[br * 3 + r][bc * 3 + c] for r in range(3) for c in range(3)]
-            if sorted(box) != list(range(1, 10)):
-                return 0.0
-    return 1.0
+
+    # Count filled cells and check each for constraint violations
+    filled = 0
+    valid = 0
+    for r in range(9):
+        for c in range(9):
+            val = solution[r][c]
+            if val < 1 or val > 9:
+                continue
+            filled += 1
+            if not _has_conflict(solution, r, c, val):
+                valid += 1
+
+    if filled == 0:
+        return 0.0
+    # Perfect solution: all 81 cells filled with no conflicts
+    if filled == 81 and valid == 81:
+        return 1.0
+    # Partial credit: fraction of conflict-free cells out of total grid
+    return valid / 81
+
+
+def _has_conflict(grid, row: int, col: int, val: int) -> bool:
+    """Check if val at (row, col) conflicts with any peer."""
+    # Row check
+    for c in range(9):
+        if c != col and grid[row][c] == val:
+            return True
+    # Column check
+    for r in range(9):
+        if r != row and grid[r][col] == val:
+            return True
+    # Box check
+    br, bc = 3 * (row // 3), 3 * (col // 3)
+    for r in range(br, br + 3):
+        for c in range(bc, bc + 3):
+            if (r, c) != (row, col) and grid[r][c] == val:
+                return True
+    return False
 
 
 def efficiency(steps: int) -> float:

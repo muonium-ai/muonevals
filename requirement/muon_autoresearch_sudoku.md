@@ -44,7 +44,9 @@ Create scorers:
 
 ```python
 def correctness(solution):
-    return 1 if is_valid(solution) else 0
+    # Partial credit: conflict-free filled cells / 81
+    # 1.0 for fully solved, 0.0 for empty/invalid structure
+    return count_conflict_free_cells(solution) / 81
 
 def efficiency(steps):
     return 1 / (1 + steps)
@@ -54,7 +56,9 @@ def speed(time_ms):
 ```
 
 **Acceptance Criteria:**
-- Each scorer returns normalized value
+- Each scorer returns normalized value in [0, 1]
+- `correctness` gives partial credit for incomplete solutions (smooth gradient)
+- `efficiency` and `speed` reject negative inputs with `ValueError`
 
 ---
 
@@ -193,7 +197,8 @@ solver_backends = {
 Score formula: `0.6 * correctness + 0.2 * efficiency + 0.2 * speed`
 
 Where:
-- `correctness(solution)` = 1.0 if valid 9x9 Sudoku grid, 0.0 otherwise
+- `correctness(solution)` = partial credit: conflict-free filled cells / 81
+  (1.0 for fully solved, proportional for partial solutions, 0.0 for empty)
 - `efficiency(steps)` = 1 / (1 + steps), steps must be non-negative
 - `speed(time_ms)` = 1 / (1 + time_ms), time_ms must be non-negative
 

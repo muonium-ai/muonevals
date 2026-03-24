@@ -36,10 +36,28 @@ def test_correctness_none_and_empty():
 
 
 def test_correctness_wrong_values():
-    """A 9x9 grid with wrong values should score 0."""
+    """A 9x9 grid with a duplicate should get partial credit, not full."""
     bad = [row[:] for row in VALID_GRID]
-    bad[0][0] = bad[0][1]  # duplicate in row
-    assert correctness(bad) == 0.0
+    bad[0][0] = bad[0][1]  # duplicate in row — both cells conflict
+    score = correctness(bad)
+    assert 0.0 < score < 1.0  # partial credit, not binary 0
+
+
+def test_correctness_partial_grid():
+    """A partially filled grid should get credit for conflict-free cells."""
+    partial = [row[:] for row in VALID_GRID]
+    # Clear 10 cells (set to 0)
+    for i in range(10):
+        partial[i // 9][i % 9] = 0
+    score = correctness(partial)
+    # 71 filled, all conflict-free → 71/81
+    assert 0.8 < score < 1.0
+
+
+def test_correctness_empty_grid():
+    """A grid of all zeros should score 0."""
+    empty = [[0] * 9 for _ in range(9)]
+    assert correctness(empty) == 0.0
 
 
 def test_efficiency_zero_steps():

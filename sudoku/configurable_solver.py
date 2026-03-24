@@ -198,7 +198,7 @@ def solve_with_config(grid: Grid, config: SolverConfig) -> SolveResult:
     elapsed = (time.perf_counter() - start) * 1000
 
     return SolveResult(
-        solution=grid if solved else None,
+        solution=grid,
         steps=steps[0],
         time_ms=elapsed,
         config=config,
