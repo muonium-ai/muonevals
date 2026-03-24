@@ -85,3 +85,57 @@ def mutate_config(config: SolverConfig, seed: Optional[int] = None) -> SolverCon
         new.propagation_depth = random.choice(choices)
 
     return new
+
+
+def random_config(seed: Optional[int] = None) -> SolverConfig:
+    """Generate a completely random SolverConfig.
+
+    Every knob is independently randomized. No bias toward any known
+    good config — pure exploration for serendipitous discovery.
+    """
+    if seed is not None:
+        random.seed(seed)
+
+    return SolverConfig(
+        strategy=random.choice(STRATEGIES),
+        use_propagation=random.choice([True, False]),
+        propagation_depth=random.choice(PROPAGATION_DEPTHS),
+        candidate_ordering=random.choice(ORDERINGS),
+        mrv=random.choice([True, False]),
+        max_steps=random.choice(MAX_STEPS_OPTIONS),
+    )
+
+
+def explore_config(best: SolverConfig, seed: Optional[int] = None) -> SolverConfig:
+    """Generate a config that starts from a different region than the best.
+
+    Picks a different strategy backend as the anchor, then randomizes
+    2-3 other knobs. Goal: escape local maxima by searching regions
+    the exploit path hasn't visited.
+    """
+    if seed is not None:
+        random.seed(seed)
+
+    # Start with a different strategy than the current best
+    other_strategies = [s for s in STRATEGIES if s != best.strategy]
+    base_strategy = random.choice(other_strategies)
+
+    # Randomize 2-3 knobs around that new strategy
+    config = SolverConfig(strategy=base_strategy)
+
+    knobs_to_randomize = random.sample(
+        ["propagation", "ordering", "mrv", "prop_depth"],
+        k=random.randint(2, 3),
+    )
+
+    for knob in knobs_to_randomize:
+        if knob == "propagation":
+            config.use_propagation = random.choice([True, False])
+        elif knob == "ordering":
+            config.candidate_ordering = random.choice(ORDERINGS)
+        elif knob == "mrv":
+            config.mrv = random.choice([True, False])
+        elif knob == "prop_depth":
+            config.propagation_depth = random.choice(PROPAGATION_DEPTHS)
+
+    return config

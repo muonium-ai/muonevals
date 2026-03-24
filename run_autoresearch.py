@@ -30,9 +30,22 @@ def main():
         "--ticket-id", type=str, default="autoresearch",
         help="Ticket ID for ledger logging"
     )
+    parser.add_argument(
+        "--exploit", type=float, default=0.6,
+        help="Fraction of exploit experiments (default: 0.6)"
+    )
+    parser.add_argument(
+        "--explore", type=float, default=0.2,
+        help="Fraction of explore experiments (default: 0.2)"
+    )
+    parser.add_argument(
+        "--random", type=float, default=0.2,
+        help="Fraction of random experiments (default: 0.2)"
+    )
     args = parser.parse_args()
 
     print(f"Running {args.experiments} experiments...")
+    print(f"Strategy mix: {args.exploit:.0%} exploit, {args.explore:.0%} explore, {args.random:.0%} random")
     if args.seed is not None:
         print(f"Seed: {args.seed}")
     print()
@@ -41,6 +54,9 @@ def main():
         num_experiments=args.experiments,
         seed=args.seed,
         ticket_id=args.ticket_id,
+        exploit_pct=args.exploit,
+        explore_pct=args.explore,
+        random_pct=args.random,
     )
 
     # Save results
